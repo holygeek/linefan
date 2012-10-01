@@ -4,7 +4,7 @@ usage() {
     echo -n "DESCRIPTION
   linefan - Spinning fan progress meter.
 SYNOPSIS
-  linefan [-h] [-c] [-d N] [-e N] [-t N]
+  linefan [-h] [-c] [-d N] [-e N] [-R <file>] [-t N]
 OPTIONS
   -c
     Clear the output when done. Leave no trace that it was run.
@@ -17,6 +17,11 @@ OPTIONS
   -e N
     Update every N lines. Default is 1.
 
+  -R <file>
+    If files does not exist, record the duration and number of lines read from
+    stdin into <file>. If file exist, use the values in <file> for the -t and
+    -d arguments.
+
   -t N
     Show estimated completion percentage based on N lines of max input.
     Setting N to 0 turns off the percentage estimation. If input lines
@@ -27,21 +32,27 @@ OPTIONS
 clear=
 every=1
 target=0
+record=
 duration=0
-while getopts hcd:e:t: opt
+while getopts hcd:e:R:t: opt
 do
   case "$opt" in
     e) every="$OPTARG";;
     d) duration="$OPTARG";;
-    t) target="$OPTARG";;
+    t) target="$OPTARG";; # target nlines
     c) clear=yes;;
+    R) record="$OPTARG";;
     h) usage ; exit;;
     \?) usage; exit;;
   esac
 done
 shift $(($OPTIND -1))
 
-if [ $duration -gt 0 -o $target -gt 0 ]; then
+if [ -f "$record" ]; then
+  eval `cat $record`
+fi
+
+if [ $duration -gt 0 -o $target -gt 0 -o -n "$record" ]; then
   start_time=`date +%s`
 fi
 
@@ -86,7 +97,7 @@ while read line; do
     fi
   fi
 
-  if [ $duration -gt 0 ]; then
+  if [ $duration -gt 0 -o -n "$record" ]; then
     lapsed=$((`date +%s` - start_time))
     if [ $lapsed -gt $duration ]; then
        #eta='20m20s'
@@ -98,6 +109,11 @@ while read line; do
 
   printf "\r%s %-5s %-8s    " $fan $percent $eta
 done
+
+if [ -n "$record" -a ! -f $record ]; then
+  echo -e "duration=$lapsed\ntarget=$nlines" > $record
+fi
+
 if [ -n "$clear" ]; then
   # Leave no trace that we've ran
   echo -n -e "\r                \r"
