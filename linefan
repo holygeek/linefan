@@ -4,7 +4,7 @@ usage() {
     echo -n "DESCRIPTION
   linefan - Spinning fan progress meter.
 SYNOPSIS
-  linefan [-h] [-c] [-d N] [-e N] [-R <file>] [-t N]
+  linefan [-h] [-c] [-d N] [-e N] [-R <file>] [-PO <file>] [-t N]
 OPTIONS
   -c
     Clear the output when done. Leave no trace that it was run.
@@ -22,6 +22,15 @@ OPTIONS
     stdin into <file>. If file exist, use the values in <file> for the -t and
     -d arguments.
 
+  -O <file>
+    Write fan output to <file> instead of stdout. Useful for use with -P to
+    show the lines read and progress in another tty:
+
+        foo | linefan -PO /dev/pts/20
+
+  -P
+    Echo whatever was read from stdin to stdout.
+
   -t N
     Show estimated completion percentage based on N lines of max input.
     Setting N to 0 turns off the percentage estimation. If input lines
@@ -33,14 +42,18 @@ clear=
 every=1
 target=0
 record=
+outfile=
 duration=0
-while getopts hcd:e:R:t: opt
+passthrough=
+while getopts hcd:e:O:PR:t: opt
 do
   case "$opt" in
     e) every="$OPTARG";;
     d) duration="$OPTARG";;
     t) target="$OPTARG";; # target nlines
     c) clear=yes;;
+    O) outfile="$OPTARG";;
+    P) passthrough=t;;
     R) record="$OPTARG";;
     h) usage ; exit;;
     \?) usage; exit;;
@@ -61,6 +74,9 @@ eta=
 n=0
 nlines=0 # Lines read so far
 while read line; do
+  if [ -n "$passthrough" ]; then
+    echo $line
+  fi
   nlines=$((nlines + 1))
   if [ $((nlines % $every)) -ne 0 ]; then
     continue
@@ -107,7 +123,11 @@ while read line; do
     fi
   fi
 
-  printf "\r%s %-5s %-8s    " $fan $percent $eta
+  if [ -n "$outfile" ]; then
+    printf "\r%s %-5s %-8s    " $fan $percent $eta >> $outfile
+  else
+    printf "\r%s %-5s %-8s    " $fan $percent $eta
+  fi
 done
 
 if [ -n "$record" -a ! -f $record ]; then
