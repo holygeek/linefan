@@ -131,6 +131,10 @@ while read line; do
 done
 
 if [ -n "$record" -a ! -f $record ]; then
+  dir=`dirname $record`
+  if [ ! -d $dir ]; then
+    mkdir -p $dir || echo -e "duration=$lapsed\ntarget=$nlines"
+  fi
   echo -e "duration=$lapsed\ntarget=$nlines" > $record
 fi
 
