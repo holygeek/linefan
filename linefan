@@ -70,6 +70,7 @@ if [ $duration -gt 0 -o $target -gt 0 -o -n "$record" ]; then
 fi
 
 percent=
+output=
 eta=
 n=0
 nlines=0 # Lines read so far
@@ -123,10 +124,11 @@ while read line; do
     fi
   fi
 
+  output=`printf "%s %-5s %-8s    " $fan $percent $eta`
   if [ -n "$outfile" ]; then
-    printf "\r%s %-5s %-8s    " $fan $percent $eta >> $outfile
+    echo -ne "$output\e[${#output}D" >> $outfile
   else
-    printf "\r%s %-5s %-8s    " $fan $percent $eta
+    echo -ne "$output\e[${#output}D"
   fi
 done
 
