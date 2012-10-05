@@ -131,6 +131,7 @@ while read line; do
     echo -ne "$output\e[${#output}D"
   fi
 done
+echo -ne "\e[${#output}C"
 
 if [ -n "$record" -a ! -f $record ]; then
   dir=`dirname $record`
