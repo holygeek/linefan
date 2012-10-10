@@ -62,7 +62,11 @@ done
 shift $(($OPTIND -1))
 
 if [ -f "$record" ]; then
+  saved_duration=0
+  saved_target=0
   eval `cat $record`
+  test $saved_duration -gt 0 && duration=$saved_duration
+  test $saved_target -gt 0 && target=$saved_target
 fi
 
 if [ $duration -gt 0 -o $target -gt 0 -o -n "$record" ]; then
@@ -138,7 +142,7 @@ if [ -n "$record" -a ! -f $record ]; then
   if [ ! -d $dir ]; then
     mkdir -p $dir || echo -e "duration=$lapsed\ntarget=$nlines"
   fi
-  echo -e "duration=$lapsed\ntarget=$nlines" > $record
+  echo -e "saved_duration=$lapsed\nsaved_target=$nlines" > $record
 fi
 
 if [ -n "$clear" ]; then
