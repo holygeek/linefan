@@ -73,6 +73,10 @@ if [ $duration -gt 0 -o $target -gt 0 -o -n "$record" ]; then
   start_time=`date +%s`
 fi
 
+echoerr() {
+  echo $* >&2
+}
+
 percent=
 output=
 eta=
@@ -129,12 +133,12 @@ while read line; do
 
   output=`printf "%s %-5s %-8s    " $fan $percent $eta`
   if [ -n "$outfile" ]; then
-    echo -ne "$output\e[${#output}D" >> $outfile
+    echoerr -ne "$output\e[${#output}D" >> $outfile
   else
-    echo -ne "$output\e[${#output}D"
+    echoerr -ne "$output\e[${#output}D"
   fi
 done
-echo -ne "\e[${#output}C"
+echoerr -ne "\e[${#output}C"
 
 if [ -n "$record" -a ! -f $record ]; then
   dir=`dirname $record`
@@ -147,7 +151,7 @@ fi
 if [ -n "$clear" ]; then
   # Leave no trace that we've ran
   spaces="                  "
-  echo -ne "\e[${#output}D$spaces\e[${#spaces}D"
+  echoerr -ne "\e[${#output}D$spaces\e[${#spaces}D"
 else
-  echo
+  echoerr
 fi
