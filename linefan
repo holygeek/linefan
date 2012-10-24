@@ -115,16 +115,15 @@ while read line; do
         eta=`echo $(($remaining_distance / $velocity + 1))|sed -e 's/\..*//' -e 's/^-//'`
         eta="(`age -c -d $eta`)"
       fi
-    fi
-  fi
-
-  if [ $duration -gt 0 -o -n "$record" ]; then
-    lapsed=$((`date +%s` - start_time))
-    if [ $lapsed -gt $duration ]; then
-       #eta='20m20s'
-	eta='?s'
-    else
-	eta="`age -c -d $((duration - lapsed))`"
+    elif [ $duration -gt 0 -o -n "$record" ]; then
+      # Calculate remaining time based on given duration
+      lapsed=$((`date +%s` - start_time))
+      if [ $lapsed -gt $duration ]; then
+        #eta='20m20s'
+          eta='?s'
+      else
+          eta="`age -c -d $((duration - lapsed))`"
+      fi
     fi
   fi
 
