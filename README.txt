@@ -1,4 +1,4 @@
-linefan - Spinning fan progress meter.
+linefan - Spinning fan progress meter (a poor, half-assed mimickcry of pv).
 
 I made this to show a spinning fan "progress" indicator when running a lengthy
 "make" session.
