@@ -65,8 +65,8 @@ if [ -f "$record" ]; then
   saved_duration=0
   saved_target=0
   eval `cat $record`
-  test $saved_duration -gt 0 && duration=$saved_duration
-  test $saved_target -gt 0 && target=$saved_target
+  test ${saved_duration:-0} -gt 0 && duration=$saved_duration
+  test ${saved_target:-0} -gt 0 && target=$saved_target
 fi
 
 if [ $duration -gt 0 -o $target -gt 0 -o -n "$record" ]; then
