@@ -1,0 +1,254 @@
+package main
+
+import (
+	"bufio"
+	"flag"
+	"fmt"
+	"io/ioutil"
+	"os"
+	"strings"
+	"time"
+	"strconv"
+)
+
+var fan = []byte{'|', '/', '-', '\\', '|', '/', '-', '\\'}
+var idx = 0
+var startTime int64
+
+func main() {
+	freq := flag.Int(
+		"e", 1, docStr("Fan speed. Lower is faster."))
+	clean := flag.Bool(
+		"c", false, docStr(
+		"Clear output when done. Leave no trace that it was run."))
+	duration := flag.Int64(
+		"d", 0, docStr(
+		"Show estimated time remaining based on N seconds total",
+		"runtime. Setting N to 0 turns off the remaining time",
+		"estimation. If runtime exceeds N, ?s is shown."))
+	tLines := flag.Int(
+		"t", 0, docStr(
+		"Show estimated completion percentage based on N lines of max",
+		"input. Setting N to 0 turns off the percentage estimation. If",
+		"input lines is more than N, ?% will be shown instead."))
+	record := flag.String(
+		"R", "", docStr(
+		"If file does not exist, record the duration and number of",
+		"lines read from stdin into <file>. If file exist, use the",
+		"values in <file> for the -t and -d arguments."))
+	echo := flag.Bool(
+		"P", false, docStr(
+		"Echo whatever was read from stdin to stdout."))
+	flag.Parse()
+
+	lastLen := 0
+	nLines := 0
+	in := bufio.NewReader(os.Stdin)
+
+	if *record != "" {
+		*duration, *tLines = readRecord(*record)
+	}
+
+	startTime = time.Now().Unix()
+	buf := ""
+	for l, noNl, e := in.ReadLine(); e == nil; l, noNl, e = in.ReadLine() {
+		if noNl { buf += string(l); continue }
+		buf += string(l)
+		nLines++
+		if (nLines - 1) % *freq == 0 {
+			if *echo {
+				fanOut(buf + "\n")
+			}
+			str := getFanText(*duration, nLines, *tLines)
+			fanOut(str)
+			newLen := len(str)
+			if newLen < lastLen {
+				// Clear trailing garbage from previous output
+				for i := newLen; i < lastLen; i++ {
+					fanOut(" ")
+				}
+				for i := newLen; i < lastLen; i++ {
+					fanOut("\b")
+				}
+			}
+
+			lastLen = newLen
+			for i := 0; i < lastLen; i++ {
+				fanOut("\b")
+			}
+			if *echo {
+				fanOut("\n")
+			}
+		}
+		buf = ""
+	}
+	timeTaken := time.Now().Unix() - startTime
+
+	if *clean {
+		cleanFan(lastLen)
+	} else {
+		fanOut("\n")
+	}
+
+	if *record != "" {
+		_, err := os.Stat(*record)
+		if os.IsNotExist(err) {
+			createFanRecord(*record, timeTaken, nLines)
+		}
+	}
+}
+
+func fanOut(str string) {
+	fmt.Fprint(os.Stderr, str)
+}
+
+func createFanRecord(record string, timeTaken int64, nLines int) {
+	str := fmt.Sprintf("duration=%d\ntarget=%d\n", timeTaken, nLines)
+	if err := ioutil.WriteFile(record, []byte(str), 0644); err != nil {
+		fmt.Println("linefan:", err)
+	}
+}
+
+func cleanFan(l int) {
+	for i := 0; i < l; i++ {
+		fanOut(" ")
+	}
+	for i := 0; i < l; i++ {
+		fanOut("\b")
+	}
+}
+
+func getFanText(duration int64, nLines, tLines int) string {
+	str := fmt.Sprintf("%c", fan[idx])
+	lapsed := float32(time.Now().Unix() - startTime)
+
+	if tLines > 0 {
+		percent := float64(nLines * 100.0 / tLines)
+		if percent <= 100 {
+			str += fmt.Sprintf(" %3.0f%%", percent)
+		} else {
+			str += "   ?%"
+		}
+		if duration == 0 && lapsed > 0 {
+			// estimate remaining time based on line velocity
+			velocity := float32(nLines) / lapsed
+			remLine := tLines - nLines
+			// Add one second to offset the last second
+			if velocity > 0 {
+				eta := int64(float32(remLine) / velocity + 1)
+				str = fmt.Sprintf("%s (%s)", str, textTime(eta))
+			}
+		}
+	}
+
+	if duration > 0 {
+		// Calculate remaining time based on given duration
+		remTime := duration - int64(lapsed)
+		if remTime >= 0 {
+			str += fmt.Sprintf(" %s", textTime(remTime))
+		} else {
+			str += " ?"
+		}
+	}
+
+	idx++
+	if idx >= len(fan) {
+		idx = idx % len(fan);
+	}
+
+	return str
+}
+
+func textTime(delta int64) string {
+	const year_text = 'y'
+	const day_text = 'd'
+	const hour_text = 'h'
+	const minute_text = 'm'
+	const second_text = 's'
+
+	const SECONDS_PER_MINUTE = 60
+	const SECONDS_PER_HOUR = 60 * SECONDS_PER_MINUTE
+	const SECONDS_PER_DAY = 24 * SECONDS_PER_HOUR
+	const SECONDS_PER_YEAR = 365 * SECONDS_PER_DAY
+
+	if delta == 0 {
+		return "0s"
+	}
+
+	years := delta / SECONDS_PER_YEAR
+	delta = delta % SECONDS_PER_YEAR
+
+	days := delta / SECONDS_PER_DAY
+	delta = delta % SECONDS_PER_DAY
+
+	hours := delta / SECONDS_PER_HOUR
+	delta = delta % SECONDS_PER_HOUR
+
+	minutes := delta / SECONDS_PER_MINUTE
+	delta = delta % SECONDS_PER_MINUTE
+
+	seconds := delta
+
+	var timeChunk [5]string
+	idx := 0
+
+	if years > 0 {
+		timeChunk[idx] = fmt.Sprintf("%d%c", years, year_text)
+		idx++
+	}
+	if idx > 0 || days > 0 {
+		timeChunk[idx] = fmt.Sprintf("%d%c", days, day_text)
+		idx++
+	}
+	if idx > 0 || hours > 0 {
+		timeChunk[idx] = fmt.Sprintf("%d%c", hours, hour_text)
+		idx++
+	}
+	if idx > 0 || minutes > 0 {
+		timeChunk[idx] = fmt.Sprintf("%2d%c", minutes, minute_text)
+		idx++
+	}
+	if idx > 0 || seconds > 0 {
+		fmtStr := "%2d%c"
+		if idx == 0 {
+			fmtStr = "%d%c"
+		}
+		timeChunk[idx] = fmt.Sprintf(fmtStr, seconds, second_text)
+		idx++
+	}
+
+	return strings.Join(timeChunk[0:idx], " ")
+}
+
+func readRecord(filename string) (duration int64, nLines int) {
+	duration, nLines = 0, 0
+	buf, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return
+	}
+	str := string(buf)
+	for _, token := range strings.Fields(str) {
+		pair := strings.Split(token, "=")
+		if len(pair) == 2 {
+			if pair[0] == "duration" {
+				d, err := strconv.Atoi(pair[1])
+				if err == nil {
+					duration = int64(d)
+				} else {
+					duration = 0
+				}
+			}
+			if pair[0] == "target" {
+				nLines, err = strconv.Atoi(pair[1])
+				if err != nil {
+					nLines = 0
+				}
+			}
+		}
+	}
+	return
+}
+
+func docStr(text ...string) string {
+	return strings.Join(text, "\n\t") + "\n"
+}
