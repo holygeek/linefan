@@ -43,17 +43,16 @@ func main() {
 
 	lastLen := 0
 	nLines := 0
-	in := bufio.NewReader(os.Stdin)
+	in := bufio.NewScanner(os.Stdin)
 
 	if *record != "" {
 		*duration, *tLines = readRecord(*record)
 	}
 
 	startTime = time.Now().Unix()
-	buf := ""
-	for l, noNl, e := in.ReadLine(); e == nil; l, noNl, e = in.ReadLine() {
-		if noNl { buf += string(l); continue }
-		buf += string(l)
+	var buf string
+	for in.Scan() {
+		buf = in.Text()
 		nLines++
 		if (nLines - 1) % *freq == 0 {
 			if *echo {
@@ -80,7 +79,6 @@ func main() {
 				fanOut("\n")
 			}
 		}
-		buf = ""
 	}
 	timeTaken := time.Now().Unix() - startTime
 
