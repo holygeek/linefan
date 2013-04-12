@@ -16,6 +16,23 @@ var fan = []byte{'|', '/', '-', '\\', '|', '/', '-', '\\'}
 var idx = 0
 var startTime int64
 
+var usage = `NAME
+  linefan - show spinning fan
+
+SYNOPSIS
+   linefan [-h] [-e N] [-c] [-d N] [-t N] [-R <file>] [-P] [<args...>]
+
+DESCRIPTION
+  If <args> is given, linefan executes <args...> using /bin/sh and display a
+  fan leaf each time a line is read and store the program run metadata -
+  duration, line count and output in .linefan directory. Next invocation with
+  the same argument in the same directory will use the same metadata.
+
+  Without <args> linefan read lines from its stdin and no metadata is saved or
+  used.
+
+OPTIONS`
+
 func main() {
 	freq := flag.Int(
 		"e", 1, docStr("Fan speed. Lower is faster."))
@@ -32,14 +49,6 @@ func main() {
 		"Show estimated completion percentage based on N lines of max",
 		"input. Setting N to 0 turns off the percentage estimation. If",
 		"input lines is more than N, ?% will be shown instead."))
-	swallow := flag.String(
-		"s", nil, docStr(
-		"'Swallow' mode - spawn and read lines from to the stdout of the",
-		"given command, and store the program run metadata - duration,",
-		"line count and output in .linefan directory.  Remaining command",
-		"line arguments are passed to the spawned command. Next",
-		"invocation with the same argument in the same directory will",
-		"use the same metadata."))
 	record := flag.String(
 		"R", "", docStr(
 		"If file does not exist, record the duration and number of",
@@ -48,11 +57,29 @@ func main() {
 	echo := flag.Bool(
 		"P", false, docStr(
 		"Echo whatever was read from stdin to stdout."))
+
+	flag.Usage = func() {
+		fmt.Println(usage)
+		flag.PrintDefaults()
+	}
+
 	flag.Parse()
 
 	lastLen := 0
 	nLines := 0
-	in := bufio.NewScanner(os.Stdin)
+
+	var in, stderr *bufio.Scanner
+	if flag.NArg() > 0 {
+		cmd := strings.Join(flag.Args(), " ")
+		in, stderr = piper.MustPipe("/bin/sh", "-c", cmd)
+		go func() {
+			for stderr.Scan() {
+				fmt.Println(stderr.Text())
+			}
+		}()
+	} else {
+		in = bufio.NewScanner(os.Stdin)
+	}
 
 	if *record != "" {
 		*duration, *tLines = readRecord(*record)
