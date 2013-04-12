@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
+	"github.com/holygeek/piper"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -31,6 +32,14 @@ func main() {
 		"Show estimated completion percentage based on N lines of max",
 		"input. Setting N to 0 turns off the percentage estimation. If",
 		"input lines is more than N, ?% will be shown instead."))
+	swallow := flag.String(
+		"s", nil, docStr(
+		"'Swallow' mode - spawn and read lines from to the stdout of the",
+		"given command, and store the program run metadata - duration,",
+		"line count and output in .linefan directory.  Remaining command",
+		"line arguments are passed to the spawned command. Next",
+		"invocation with the same argument in the same directory will",
+		"use the same metadata."))
 	record := flag.String(
 		"R", "", docStr(
 		"If file does not exist, record the duration and number of",
