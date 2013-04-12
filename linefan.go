@@ -90,30 +90,32 @@ func main() {
 	for in.Scan() {
 		buf = in.Text()
 		nLines++
-		if (nLines - 1) % *freq == 0 {
-			if *echo {
-				fanOut(buf + "\n")
-			}
-			str := getFanText(*duration, nLines, *tLines)
-			fanOut(str)
-			newLen := len(str)
-			if newLen < lastLen {
-				// Clear trailing garbage from previous output
-				for i := newLen; i < lastLen; i++ {
-					fanOut(" ")
-				}
-				for i := newLen; i < lastLen; i++ {
-					fanOut("\b")
-				}
-			}
+		if (nLines - 1) % *freq != 0 {
+			continue
+		}
 
-			lastLen = newLen
-			for i := 0; i < lastLen; i++ {
+		if *echo {
+			fanOut(buf + "\n")
+		}
+		str := getFanText(*duration, nLines, *tLines)
+		fanOut(str)
+		newLen := len(str)
+		if newLen < lastLen {
+			// Clear trailing garbage from previous output
+			for i := newLen; i < lastLen; i++ {
+				fanOut(" ")
+			}
+			for i := newLen; i < lastLen; i++ {
 				fanOut("\b")
 			}
-			if *echo {
-				fanOut("\n")
-			}
+		}
+
+		lastLen = newLen
+		for i := 0; i < lastLen; i++ {
+			fanOut("\b")
+		}
+		if *echo {
+			fanOut("\n")
 		}
 	}
 	timeTaken := time.Now().Unix() - startTime
