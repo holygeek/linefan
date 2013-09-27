@@ -24,12 +24,13 @@ SYNOPSIS
 
 DESCRIPTION
   If <args> is given, linefan executes <args...> using /bin/sh and display a
-  fan leaf each time a line is read and store the program run metadata -
-  duration, line count and output in .linefan directory. Next invocation with
-  the same argument in the same directory will use the same metadata.
+  fan leaf each time a stdout line is read and when the shell exits linefan
+  stores the run metadata - duration, line count and output in .linefan
+  directory.  Next invocation with the same argument in the same directory will
+  use the same metadata for estimating the completion time.
 
-  Without <args> linefan read lines from its stdin and no metadata is saved or
-  used.
+  Without <args> linefan read lines from stdin and no metadata is saved or
+  used unless explicitly requested using the options.
 
 OPTIONS`
 
