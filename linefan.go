@@ -71,6 +71,10 @@ func main() {
 
 	var in, stderr *bufio.Scanner
 	if flag.NArg() > 0 {
+		if *record == "" {
+			createDir(".linefan")
+			*record = ".linefan/lastrun"
+		}
 		cmd := strings.Join(flag.Args(), " ")
 		in, stderr = piper.MustPipe("/bin/sh", "-c", cmd)
 		go func() {
@@ -83,7 +87,8 @@ func main() {
 	}
 
 	if *record != "" {
-		*duration, *tLines = readRecord(*record)
+		content := readFile(*record)
+		*duration, *tLines = readRecord(&content)
 	}
 
 	startTime = time.Now().Unix()
@@ -133,6 +138,10 @@ func main() {
 			createFanRecord(*record, timeTaken, nLines)
 		}
 	}
+}
+
+func createDir(name string) {
+	os.MkdirAll(name, os.ModeDir|os.ModePerm)
 }
 
 func fanOut(str string) {
@@ -257,14 +266,9 @@ func textTime(delta int64) string {
 	return strings.Join(timeChunk[0:idx], " ")
 }
 
-func readRecord(filename string) (duration int64, nLines int) {
+func readRecord(content *string) (duration int64, nLines int) {
 	duration, nLines = 0, 0
-	buf, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return
-	}
-	str := string(buf)
-	for _, token := range strings.Fields(str) {
+	for _, token := range strings.Fields(*content) {
 		pair := strings.Split(token, "=")
 		if len(pair) == 2 {
 			if pair[0] == "duration" {
@@ -276,14 +280,22 @@ func readRecord(filename string) (duration int64, nLines int) {
 				}
 			}
 			if pair[0] == "target" {
-				nLines, err = strconv.Atoi(pair[1])
+				value, err := strconv.Atoi(pair[1])
 				if err != nil {
-					nLines = 0
+					nLines = value
 				}
 			}
 		}
 	}
 	return
+}
+
+func readFile(filename string) string {
+	buf, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return ""
+	}
+	return string(buf)
 }
 
 func docStr(text ...string) string {
