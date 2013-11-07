@@ -35,8 +35,6 @@ DESCRIPTION
 OPTIONS`
 
 func main() {
-	freq := flag.Int(
-		"e", 1, docStr("Fan speed. Lower is faster."))
 	clean := flag.Bool(
 		"c", false, docStr(
 		"Clear output when done. Leave no fan trace."))
@@ -45,19 +43,21 @@ func main() {
 		"Show estimated time remaining based on N seconds total",
 		"runtime. Setting N to 0 turns off the remaining time",
 		"estimation. If runtime exceeds N, ?s is shown."))
-	tLines := flag.Int(
-		"t", 0, docStr(
-		"Show estimated completion percentage based on N lines of max",
-		"input. Setting N to 0 turns off the percentage estimation. If",
-		"input lines is more than N, ?% will be shown instead."))
+	freq := flag.Int(
+		"e", 1, docStr("Fan speed. Lower is faster."))
+	echo := flag.Bool(
+		"P", false, docStr(
+		"Echo whatever was read from stdin to stdout."))
 	record := flag.String(
 		"R", "", docStr(
 		"If file does not exist, record the duration and number of",
 		"lines read from stdin into <file>. If file exist, use the",
 		"values in <file> for the -t and -d arguments."))
-	echo := flag.Bool(
-		"P", false, docStr(
-		"Echo whatever was read from stdin to stdout."))
+	tLines := flag.Int(
+		"t", 0, docStr(
+		"Show estimated completion percentage based on N lines of max",
+		"input. Setting N to 0 turns off the percentage estimation. If",
+		"input lines is more than N, ?% will be shown instead."))
 
 	flag.Usage = func() {
 		fmt.Println(usage)
