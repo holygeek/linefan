@@ -39,7 +39,7 @@ func main() {
 		"e", 1, docStr("Fan speed. Lower is faster."))
 	clean := flag.Bool(
 		"c", false, docStr(
-		"Clear output when done. Leave no trace that it was run."))
+		"Clear output when done. Leave no fan trace."))
 	duration := flag.Int64(
 		"d", 0, docStr(
 		"Show estimated time remaining based on N seconds total",
