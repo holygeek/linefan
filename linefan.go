@@ -51,6 +51,9 @@ func main() {
 	echo := flag.Bool(
 		"P", false, docStr(
 		"Echo whatever was read from stdin to stdout."))
+	quiet := flag.Bool(
+		"q", false, docStr(
+		"Do not show fan."))
 	record := flag.String(
 		"R", "", docStr(
 		"If file does not exist, record the duration and number of",
@@ -105,13 +108,16 @@ func main() {
 	for in.Scan() {
 		buf = in.Text()
 		nLines++
+		if *echo {
+			fanOut(buf + "\n")
+		}
+		if *quiet {
+			continue
+		}
 		if (nLines - 1) % *freq != 0 {
 			continue
 		}
 
-		if *echo {
-			fanOut(buf + "\n")
-		}
 		str := getFanText(*duration, nLines, *tLines)
 		fanOut(str)
 		newLen := len(str)
@@ -135,10 +141,12 @@ func main() {
 	}
 	timeTaken := time.Now().Unix() - startTime
 
-	if *clean {
-		cleanFan(lastLen)
-	} else {
-		fanOut("\n")
+	if ! *quiet {
+		if *clean {
+			cleanFan(lastLen)
+		} else {
+			fanOut("\n")
+		}
 	}
 
 	if *record != "" {
