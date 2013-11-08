@@ -35,6 +35,9 @@ DESCRIPTION
 OPTIONS`
 
 func main() {
+	chdir := flag.String(
+		"C", "", docStr(
+		"Change to given directory before doing anything else"))
 	clean := flag.Bool(
 		"c", false, docStr(
 		"Clear output when done. Leave no fan trace."))
@@ -65,6 +68,13 @@ func main() {
 	}
 
 	flag.Parse()
+	if (*chdir != "") {
+		err := os.Chdir(*chdir)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return
+		}
+	}
 
 	lastLen := 0
 	nLines := 0
