@@ -71,11 +71,10 @@ func main() {
 
 	var in, stderr *bufio.Scanner
 	if flag.NArg() > 0 {
-		if *record == "" {
-			createDir(".linefan")
-			*record = ".linefan/lastrun"
-		}
 		cmd := strings.Join(flag.Args(), " ")
+		if *record == "" {
+			*record = safeFileName(cmd)
+		}
 		in, stderr = piper.MustPipe("/bin/sh", "-c", cmd)
 		go func() {
 			for stderr.Scan() {
@@ -140,6 +139,19 @@ func main() {
 	}
 }
 
+func safeFileName(cmd string) string {
+	createDir(".linefan")
+	fsSafe := func(r rune) rune {
+		switch {
+		case r >= ' ' && r <= '.':
+		return r
+		case r >= '0' && r <= '~':
+		return r
+		}
+		return '_'
+	}
+	return strings.Join([]string{".linefan", strings.Map(fsSafe, cmd)}, "/")
+}
 func createDir(name string) {
 	os.MkdirAll(name, os.ModeDir|os.ModePerm)
 }
