@@ -118,6 +118,10 @@ func main() {
 			continue
 		}
 
+		for i := 0; i < lastLen; i++ {
+			fanOut("\b")
+		}
+
 		str := getFanText(*duration, nLines, *tLines)
 		fanOut(str)
 		newLen := len(str)
@@ -132,9 +136,6 @@ func main() {
 		}
 
 		lastLen = newLen
-		for i := 0; i < lastLen; i++ {
-			fanOut("\b")
-		}
 		if *echo {
 			fanOut("\n")
 		}
@@ -187,10 +188,7 @@ func createFanRecord(record string, timeTaken int64, nLines int) {
 
 func cleanFan(l int) {
 	for i := 0; i < l; i++ {
-		fanOut(" ")
-	}
-	for i := 0; i < l; i++ {
-		fanOut("\b")
+		fanOut("\b \b")
 	}
 }
 
