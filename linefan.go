@@ -59,6 +59,10 @@ func main() {
 		"If file does not exist, record the duration and number of",
 		"lines read from stdin into <file>. If file exist, use the",
 		"values in <file> for the -t and -d arguments."))
+	saveNewRecord := flag.Bool(
+		"r", false, docStr(
+		"When done, record the duration and number of",
+		"lines read from stdin into <file> given by -R."))
 	tLines := flag.Int(
 		"t", 0, docStr(
 		"Show estimated completion percentage based on N lines of max",
@@ -152,7 +156,7 @@ func main() {
 
 	if *record != "" {
 		_, err := os.Stat(*record)
-		if os.IsNotExist(err) {
+		if *saveNewRecord || os.IsNotExist(err) {
 			createFanRecord(*record, timeTaken, nLines)
 		}
 	}
