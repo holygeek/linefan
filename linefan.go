@@ -71,7 +71,8 @@ func main() {
 		"input lines is more than N, ?% will be shown instead."))
 	title := flag.String(
 		"T", "", docStr(
-		"Print given title before the fan."))
+		"Print given title before the fan. If title is '-', and <args>",
+	        "is supplied, then use <args> as the title"))
 
 	flag.Usage = func() {
 		fmt.Println(usage)
@@ -90,9 +91,10 @@ func main() {
 	lastLen := 0
 	nLines := 0
 
+	cmd := ""
 	var in, stderr *bufio.Scanner
 	if flag.NArg() > 0 {
-		cmd := strings.Join(flag.Args(), " ")
+		cmd = strings.Join(flag.Args(), " ")
 		if *record == "" {
 			*record = safeFileName(cmd)
 		}
@@ -113,7 +115,7 @@ func main() {
 
 	startTime = time.Now().Unix()
 	if *title != "" {
-		*title = *title + " "
+		*title = chooseAndFormatTitle(*title, cmd)
 		fanOut(*title)
 	}
 	var buf string
@@ -168,6 +170,13 @@ func main() {
 			createFanRecord(*record, timeTaken, nLines)
 		}
 	}
+}
+
+func chooseAndFormatTitle(titleArg, cmd string) string {
+  if titleArg == "-" && cmd != "" {
+    titleArg = cmd
+  }
+  return titleArg + " "
 }
 
 func safeFileName(cmd string) string {
