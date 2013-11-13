@@ -20,7 +20,8 @@ var usage = `NAME
   linefan - show spinning fan
 
 SYNOPSIS
-   linefan [-h] [-e N] [-c] [-d N] [-t N] [-R <file>] [-P] [<args...>]
+   linefan -h
+   linefan [-e N] [-c] [-d N] [-t N] [-R <file>] [-r] [-T Title] [-P] [<args...>]
 
 DESCRIPTION
   If <args> is given, linefan executes <args...> using /bin/sh and display a
@@ -68,6 +69,9 @@ func main() {
 		"Show estimated completion percentage based on N lines of max",
 		"input. Setting N to 0 turns off the percentage estimation. If",
 		"input lines is more than N, ?% will be shown instead."))
+	title := flag.String(
+		"T", "", docStr(
+		"Print given title before the fan."))
 
 	flag.Usage = func() {
 		fmt.Println(usage)
@@ -108,6 +112,10 @@ func main() {
 	}
 
 	startTime = time.Now().Unix()
+	if *title != "" {
+		*title = *title + " "
+		fanOut(*title)
+	}
 	var buf string
 	for in.Scan() {
 		buf = in.Text()
@@ -148,7 +156,7 @@ func main() {
 
 	if ! *quiet {
 		if *clean {
-			cleanFan(lastLen)
+			cleanFan(lastLen + len(*title))
 		} else {
 			fanOut("\n")
 		}
