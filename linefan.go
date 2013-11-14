@@ -7,6 +7,7 @@ import (
 	"github.com/holygeek/piper"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"strings"
 	"time"
 	"strconv"
@@ -92,13 +93,14 @@ func main() {
 	nLines := 0
 
 	cmd := ""
+	var proc *exec.Cmd
 	var in, stderr *bufio.Scanner
 	if flag.NArg() > 0 {
 		cmd = strings.Join(flag.Args(), " ")
 		if *record == "" {
 			*record = safeFileName(cmd)
 		}
-		in, stderr = piper.MustPipe("/bin/sh", "-c", cmd)
+		proc, in, stderr = piper.MustPipe("/bin/sh", "-c", cmd)
 		go func() {
 			for stderr.Scan() {
 				fmt.Println(stderr.Text())
@@ -170,6 +172,14 @@ func main() {
 			createFanRecord(*record, timeTaken, nLines)
 		}
 	}
+
+	ret := 0
+	if proc != nil {
+		if proc.Wait() != nil {
+			ret = 1
+		}
+	}
+	os.Exit(ret)
 }
 
 func chooseAndFormatTitle(titleArg, cmd string) string {
